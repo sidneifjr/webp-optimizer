@@ -1,17 +1,17 @@
 {
   "name": "otimizador-webp",
   "version": "1.0.0",
-  "description": "Observa a pasta Downloads e converte imagens para WebP otimizado, com hash no início do nome.",
+  "description": "Observa a pasta Downloads e converte imagens para WebP otimizado, com hash no final do nome.",
   "main": "main.js",
   "private": true,
   "scripts": {
     "start": "electron ."
   },
   "dependencies": {
-    "chokidar": "^4.0.3",
-    "sharp": "^0.34.0"
+    "chokidar": "^6.0.0",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
-    "electron": "^38.0.0"
+    "electron": "^45.3.4"
   }
 }

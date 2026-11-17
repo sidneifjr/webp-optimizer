@@ -1,11 +1,24 @@
 const fsp = require('fs/promises');
 const path = require('path');
 const crypto = require('crypto');
-const chokidar = require('chokidar');
 const sharp = require('sharp');
 
 // No Windows o cache de arquivos do sharp pode manter arquivos travados.
 sharp.cache(false);
+
+// O chokidar 5+ é somente ESM. O import() dinâmico funciona a partir de módulos CommonJS
+// e carrega o pacote uma única vez, sob demanda.
+let chokidarPromise = null;
+async function loadWatch() {
+  if (!chokidarPromise) {
+    chokidarPromise = import('chokidar').catch((err) => {
+      chokidarPromise = null; // permite tentar de novo depois de uma falha
+      throw err;
+    });
+  }
+  const mod = await chokidarPromise;
+  return mod.watch ?? mod.default.watch;
+}
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -138,20 +151,37 @@ function createOptimizer(config, { onResult = () => {}, log = console.log } = {}
     optimize(file);
   }
 
+  let starting = null;
+
+  // Assíncrono porque o chokidar (ESM) é carregado sob demanda.
+  // Chamadas simultâneas compartilham a mesma inicialização.
   function start() {
-    if (watcher) return;
-    watcher = chokidar.watch(config.watchDirs, {
-      ignoreInitial: true, // não processa o que já estava na pasta
-      depth: 0,            // somente a raiz de cada pasta
-      ignored: (p) => hasSuffix(p),
-      awaitWriteFinish: { stabilityThreshold: 1000, pollInterval: 200 },
+    if (watcher) return Promise.resolve();
+    if (starting) return starting;
+
+    starting = (async () => {
+      const watch = await loadWatch();
+      const current = watch(config.watchDirs, {
+        ignoreInitial: true, // não processa o que já estava na pasta
+        depth: 0,            // somente a raiz de cada pasta
+        ignored: (p) => hasSuffix(p),
+        awaitWriteFinish: { stabilityThreshold: 1000, pollInterval: 200 },
+      });
+      current.on('add', handleAdd);
+      current.on('error', (err) => log(`[watcher] ${err.message}`));
+      watcher = current;
+      log(`[watcher] ativo em: ${config.watchDirs.join(', ')}`);
+    })().finally(() => {
+      starting = null;
     });
-    watcher.on('add', handleAdd);
-    watcher.on('error', (err) => log(`[watcher] ${err.message}`));
-    log(`[watcher] ativo em: ${config.watchDirs.join(', ')}`);
+
+    return starting;
   }
 
+  // Cada watcher é descartável: no chokidar 6, close() é definitivo,
+  // então um novo start() sempre cria uma instância nova.
   async function stop() {
+    if (starting) await starting.catch(() => {});
     if (!watcher) return;
     const current = watcher;
     watcher = null;
@@ -159,7 +189,7 @@ function createOptimizer(config, { onResult = () => {}, log = console.log } = {}
     log('[watcher] desativado');
   }
 
-  return { start, stop, isRunning: () => watcher !== null };
+  return { start, stop, isRunning: () => watcher !== null || starting !== null };
 }
 
 module.exports = { createOptimizer };

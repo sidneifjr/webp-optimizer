@@ -13,12 +13,16 @@ produce the same name, so duplicates are skipped.
 
 ## Getting started
 
-Requires Node.js 20+ on Windows 10.
+Requires 64-bit Windows 10 or later and Node.js 22.22+ on the machine that runs `npm install`
+(chokidar 6 declares that minimum; the app itself runs on the Node.js bundled with Electron).
 
 ```bash
 npm install
 npm start
 ```
+
+Since Electron 42, the Electron binary is downloaded on the first `npm start`, not during
+`npm install`, so the first launch needs an internet connection and takes a bit longer.
 
 ## Lossless conversion
 

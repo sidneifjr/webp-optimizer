@@ -51,8 +51,13 @@ function sendHistory() {
 
 async function setActive(value) {
   active = value;
-  if (active) optimizer.start();
-  else await optimizer.stop();
+  try {
+    if (active) await optimizer.start();
+    else await optimizer.stop();
+  } catch (err) {
+    console.error('Falha ao alternar o monitoramento:', err);
+    active = optimizer.isRunning(); // o estado exibido reflete o que realmente está rodando
+  }
   broadcast();
 }
 
@@ -243,7 +248,7 @@ if (!gotLock) {
       });
     }
 
-    if (active) optimizer.start();
+    if (active) await setActive(true);
 
     // Começa recolhido, mostrando só a flecha.
     arrowWin.webContents.once('did-finish-load', () => {
