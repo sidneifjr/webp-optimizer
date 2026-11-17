@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'">
+  <title>Otimizador WebP</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+      user-select: none;
+    }
+    #tab {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      color: #9ca3af;
+      background: rgba(24, 24, 27, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-right: 0;
+      border-radius: 10px 0 0 10px;
+      transition: background 0.15s;
+    }
+    #tab:hover { background: rgba(39, 39, 42, 0.98); }
+    #tab.on { color: #22c55e; }
+  </style>
+</head>
+<body>
+  <div id="tab" title="Abrir painel (Alt+X)">
+    <svg width="20" height="20" viewBox="0 0 64 64">
+      <path d="M52 32H14M30 16L14 32l16 16" fill="none" stroke="currentColor"
+            stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+
+  <script src="arrow.js"></script>
+</body>
+</html>

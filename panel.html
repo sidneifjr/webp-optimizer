@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'">
+  <title>Otimizador WebP</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: transparent;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      user-select: none;
+      overflow: hidden;
+    }
+    body { padding: 10px; }
+
+    .card {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(24, 24, 27, 0.96);
+      color: #f4f4f5;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    }
+
+    .head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      -webkit-app-region: drag;
+    }
+    .title { font-size: 13px; font-weight: 600; letter-spacing: 0.2px; }
+
+    .icon-btn {
+      -webkit-app-region: no-drag;
+      display: grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #a1a1aa;
+      cursor: pointer;
+    }
+    .icon-btn:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+
+    .status { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #d4d4d8; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #9ca3af; }
+    .dot.on { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+
+    .primary {
+      -webkit-app-region: no-drag;
+      height: 36px;
+      border: 0;
+      border-radius: 8px;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      background: #3f3f46;
+    }
+    .primary:hover { filter: brightness(1.15); }
+    .primary.is-off { background: #16a34a; }
+
+    .foot { margin-top: auto; text-align: right; }
+    .link {
+      -webkit-app-region: no-drag;
+      border: 0;
+      background: transparent;
+      color: #71717a;
+      font: inherit;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .link:hover { color: #f87171; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="head">
+      <span class="title">Otimizador WebP</span>
+      <button id="collapse" class="icon-btn" title="Recolher (Alt+X)" aria-label="Recolher">
+        <svg width="16" height="16" viewBox="0 0 64 64">
+          <path d="M12 32h40M36 16l16 16-16 16" fill="none" stroke="currentColor"
+                stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="status">
+      <span id="dot" class="dot"></span>
+      <span><span id="status">Ativo</span> · <span id="count">0</span> otimizadas</span>
+    </div>
+
+    <button id="toggle" class="primary">Desativar</button>
+
+    <div class="foot"><button id="quit" class="link">Sair do app</button></div>
+  </div>
+
+  <script src="panel.js"></script>
+</body>
+</html>
