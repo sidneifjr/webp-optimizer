@@ -40,25 +40,48 @@ function createOptimizer(config, { onResult = () => {}, log = console.log } = {}
     return config.ignoredSuffixes.some((suffix) => lower.endsWith(suffix));
   };
 
+  // Tenta lossless primeiro; se ele ficar maior que o original (e o fallback
+  // estiver permitido), recorre ao modo com perdas.
+  async function encode(pipeline, originalSize) {
+    const { lossless, allowLossyFallback, quality, effort } = config.webp;
+
+    if (lossless) {
+      // exact: preserva até o RGB escondido sob pixels totalmente transparentes.
+      const buffer = await pipeline
+        .clone()
+        .webp({ lossless: true, exact: true, effort })
+        .toBuffer();
+
+      if (buffer.length < originalSize || !allowLossyFallback) {
+        return { buffer, mode: 'lossless' };
+      }
+    }
+
+    const buffer = await pipeline.clone().webp({ quality, effort }).toBuffer();
+    return { buffer, mode: 'lossy' };
+  }
+
   async function optimize(file) {
     if (inFlight.has(file)) return;
     inFlight.add(file);
 
     try {
       const ext = path.extname(file).toLowerCase();
+      const fileName = path.basename(file);
       const baseName = path.parse(file).name;
       const animated = ext === '.gif';
 
       // Lê para memória: o sharp não segura o arquivo original aberto.
       const input = await readWithRetry(file);
 
-      let pipeline = sharp(input, { animated });
-      if (!animated) pipeline = pipeline.rotate(); // aplica orientação EXIF (metadados são removidos)
+      // keepIccProfile mantém a cor fiel (sem converter para sRGB).
+      let pipeline = sharp(input, { animated }).keepIccProfile();
+      if (!animated) pipeline = pipeline.rotate(); // aplica orientação EXIF (demais metadados são removidos)
       if (config.maxWidth) {
         pipeline = pipeline.resize({ width: config.maxWidth, withoutEnlargement: true });
       }
 
-      const output = await pipeline.webp(config.webp).toBuffer();
+      const { buffer: output, mode } = await encode(pipeline, input.length);
 
       const hash = crypto
         .createHash('sha256')
@@ -71,8 +94,20 @@ function createOptimizer(config, { onResult = () => {}, log = console.log } = {}
 
       await fsp.mkdir(config.outputDir, { recursive: true });
 
+      const details = {
+        ok: true,
+        input: file,
+        output: outPath,
+        name: fileName,
+        outputName: outName,
+        originalSize: input.length,
+        optimizedSize: output.length,
+        mode,
+      };
+
       if (await exists(outPath)) {
-        log(`[skip] ${path.basename(file)} -> ${outName} (já existe)`);
+        log(`[skip] ${fileName} -> ${outName} (já existe)`);
+        details.skipped = true;
       } else {
         // Escreve em temporário e renomeia, para nunca deixar arquivo pela metade.
         const tmpPath = `${outPath}.tmp`;
@@ -80,12 +115,14 @@ function createOptimizer(config, { onResult = () => {}, log = console.log } = {}
         await fsp.rename(tmpPath, outPath);
 
         const saved = Math.round((1 - output.length / input.length) * 100);
-        log(`[ok] ${path.basename(file)} -> ${outName} (${saved}% menor)`);
+        const delta = saved >= 0 ? `${saved}% menor` : `${-saved}% maior`;
+        log(`[ok] ${fileName} -> ${outName} (${delta}, ${mode})`);
+        details.skipped = false;
       }
 
       if (config.deleteOriginal) await fsp.unlink(file);
 
-      onResult({ ok: true, input: file, output: outPath });
+      onResult(details);
     } catch (err) {
       log(`[erro] ${path.basename(file)}: ${err.message}`);
       onResult({ ok: false, input: file, error: err });

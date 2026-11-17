@@ -23,15 +23,32 @@ module.exports = {
   deleteOriginal: false,
 
   webp: {
-    quality: 80, // 1-100
-    effort: 4,   // 0-6 (maior = arquivo menor, porém mais lento)
+    // true = tenta SEMPRE primeiro a conversão sem perdas (lossless).
+    lossless: true,
+
+    // Se o lossless ficar MAIOR que o original (comum em JPEG/AVIF, que já são com perdas),
+    // usa o modo com perdas abaixo em vez de aumentar o arquivo. Essas imagens aparecem
+    // com a etiqueta "com perdas" no histórico.
+    // Use false para manter sempre lossless, mesmo que o arquivo cresça.
+    allowLossyFallback: true,
+
+    // Qualidade (1-100) do modo com perdas. Só é usada no fallback ou se lossless = false.
+    // Valores acima de ~85 tendem a deixar JPEGs comuns MAIORES que o original.
+    quality: 80,
+
+    // 0-6 (maior = arquivo menor, porém mais lento).
+    effort: 6,
   },
 
   // Largura máxima em pixels (null = não redimensiona). Nunca aumenta imagens pequenas.
+  // Atenção: redimensionar deixa a conversão de ser lossless em relação ao original.
   maxWidth: null,
 
   // Quantidade de caracteres do hash no início do nome do arquivo.
   hashLength: 10,
+
+  // Quantidade máxima de itens guardados no histórico do painel.
+  historyLimit: 200,
 
   // Extensões de entrada. .webp fica de fora de propósito.
   extensions: ['.png', '.jpg', '.jpeg', '.jfif', '.bmp', '.tif', '.tiff', '.gif', '.avif'],
