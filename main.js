@@ -13,8 +13,9 @@ const path = require('path');
 const sharp = require('sharp');
 const config = require('./config');
 const { createOptimizer } = require('./optimizer');
+const { createHistory } = require('./history');
 
-const PANEL_SIZE = { width: 240, height: 170 };
+const PANEL_SIZE = { width: 580, height: 440 };
 const ARROW_SIZE = { width: 30, height: 64 };
 const MARGIN = 16;
 
@@ -22,24 +23,30 @@ const COLOR_ON = '#22c55e';
 const COLOR_OFF = '#9ca3af';
 
 let active = config.startActive;
-let processed = 0;
 let panelVisible = false;
 
 let panelWin = null;
 let arrowWin = null;
 let tray = null;
 let optimizer = null;
+let history = null;
 let trayIcons = null;
 
 // ---------- estado ----------
 
-const getState = () => ({ active, processed });
+const getState = () => ({ active, count: history ? history.list().length : 0 });
 
 function broadcast() {
   for (const win of [panelWin, arrowWin]) {
     if (win && !win.isDestroyed()) win.webContents.send('state', getState());
   }
   refreshTray();
+}
+
+function sendHistory() {
+  if (panelWin && !panelWin.isDestroyed()) {
+    panelWin.webContents.send('history', history.list());
+  }
 }
 
 async function setActive(value) {
@@ -169,6 +176,12 @@ function createTray() {
 
 function registerIpc() {
   ipcMain.handle('get-state', () => getState());
+  ipcMain.handle('get-history', () => history.list());
+  ipcMain.on('clear-history', () => {
+    history.clear();
+    sendHistory();
+    broadcast();
+  });
   ipcMain.on('toggle-active', () => setActive(!active));
   ipcMain.on('collapse', collapse);
   ipcMain.on('expand', showPanel);
@@ -196,12 +209,24 @@ if (!gotLock) {
       off: await buildArrowIcon(COLOR_OFF),
     };
 
+    history = createHistory(path.join(app.getPath('userData'), 'history.json'), config.historyLimit);
+
     optimizer = createOptimizer(config, {
       onResult: (result) => {
-        if (result.ok) {
-          processed += 1;
-          broadcast();
-        }
+        // Duplicatas (arquivo já gerado antes) e erros não entram no histórico.
+        if (!result.ok || result.skipped) return;
+
+        history.add({
+          at: Date.now(),
+          name: result.name,
+          outputName: result.outputName,
+          outputPath: result.output,
+          originalSize: result.originalSize,
+          optimizedSize: result.optimizedSize,
+          mode: result.mode,
+        });
+        sendHistory();
+        broadcast();
       },
     });
 
@@ -230,5 +255,6 @@ if (!gotLock) {
   app.on('will-quit', () => {
     globalShortcut.unregisterAll();
     if (optimizer) optimizer.stop();
+    if (history) history.flushSync();
   });
 }
