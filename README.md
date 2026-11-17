@@ -1,73 +1,75 @@
 # Otimizador WebP
 
-App em Electron (Node.js) que roda em segundo plano, observa a pasta **Downloads** e converte
-cada imagem nova para **WebP**, salvando em `Downloads\Otimizadas` com um **hash no início do
-nome**:
+An Electron (Node.js) app that runs in the background, watches your **Downloads** folder and
+converts every new image to **WebP**, saving it to `Downloads\Otimizadas` with a **hash appended
+to the file name** (before the extension):
 
 ```
-foto.png  ->  Downloads\Otimizadas\3f9a1c07b2_foto.webp
+foto.png  ->  Downloads\Otimizadas\foto_3f9a1c07b2.webp
 ```
 
-O hash (SHA-256, 10 caracteres) é calculado sobre o conteúdo do WebP gerado. Imagens idênticas
-produzem o mesmo nome, então duplicatas são ignoradas.
+The hash (SHA-256, 10 characters) is computed from the generated WebP content. Identical images
+produce the same name, so duplicates are skipped.
 
-## Como rodar
+## Getting started
 
-Requer Node.js 20+ no Windows 10.
+Requires Node.js 20+ on Windows 10.
 
 ```bash
 npm install
 npm start
 ```
 
-## Conversão lossless
+## Lossless conversion
 
-A conversão tenta **sempre primeiro o modo sem perdas** (lossless), preservando os pixels
-exatamente, inclusive a transparência e o perfil de cor.
+The converter **always tries lossless mode first**, preserving pixels exactly, including
+transparency and the color profile.
 
-Quando o lossless ficaria **maior que o original** (o que é comum em JPEG e AVIF, que já são
-formatos com perdas), o app usa o modo com perdas (qualidade 80 por padrão) para não aumentar o
-arquivo. Essas imagens aparecem com a etiqueta **com perdas** no histórico.
+When lossless would produce a file **larger than the original** (common with JPEG and AVIF,
+which are already lossy formats), the app falls back to lossy mode (quality 80 by default) so the
+file doesn't grow. Those images show a **com perdas** ("lossy") tag in the history.
 
-Em `config.js`, dentro de `webp`:
+In `config.js`, under `webp`:
 
-- `lossless: false` desliga o lossless e usa sempre o modo com perdas;
-- `allowLossyFallback: false` mantém sempre lossless, mesmo que o arquivo cresça;
-- `quality` e `effort` ajustam o modo com perdas e o esforço de compressão.
+- `lossless: false` turns lossless off and always uses lossy mode;
+- `allowLossyFallback: false` always keeps lossless, even if the file gets larger;
+- `quality` and `effort` tune the lossy mode and the compression effort.
 
-Observação: `maxWidth` (redimensionar) deixa a conversão de ser lossless em relação ao original.
-Fica desligado (`null`) por padrão.
+Note: `maxWidth` (resizing) means the result is no longer lossless relative to the original.
+It is disabled (`null`) by default.
 
 ## Interface
 
-- **Alt + X** abre/recolhe o painel (de qualquer programa).
-- O painel mostra o status, o botão **Desativar** (quando ativo) ou **Ativar** (quando
-  desativado) e o **histórico** em tabela, com as colunas Arquivo, Original, Otimizado e
-  Economia (% de espaço liberado). Os mais recentes ficam no topo.
-  - Passe o mouse sobre uma linha para ver o nome final (com hash) e a data/hora.
-  - Economia em verde = arquivo menor; em vermelho = arquivo maior que o original.
-  - **Limpar histórico** apaga só a lista, nunca os arquivos.
-- O histórico é guardado em `%APPDATA%\otimizador-webp\history.json` (até `historyLimit` itens,
-  200 por padrão) e sobrevive a reinicializações.
-- Recolhido, o app fica como uma **flecha** na borda direita da tela (verde = ativo, cinza =
-  desativado). Clique nela para abrir o painel.
-- Ícone de flecha na bandeja do sistema, com menu: abrir/recolher, ativar/desativar, abrir a
-  pasta das otimizadas e sair. Também há o link "Sair do app" no painel e a tecla Esc para recolher.
+- **Alt + X** opens/collapses the panel (from any program).
+- The panel shows the status, the **Desativar** (Disable) button while active or **Ativar**
+  (Enable) while disabled, and the **history** as a table with the columns **Arquivo** (file),
+  **Original**, **Otimizado** (optimized) and **Economia** (percentage of space saved). Newest
+  entries are at the top.
+  - Hover over a row to see the final file name (with hash) and the date/time.
+  - Green savings = smaller file; red = file larger than the original.
+  - **Limpar histórico** (Clear history) clears the list only, never the files.
+- The history is stored in `%APPDATA%\otimizador-webp\history.json` (up to `historyLimit` items,
+  200 by default) and survives restarts.
+- When collapsed, the app shows as an **arrow** on the right edge of the screen (green = active,
+  gray = disabled). Click it to open the panel.
+- An arrow icon in the system tray with a menu: open/collapse, enable/disable, open the folder
+  with the optimized images, and quit. The panel also has a "Sair do app" (Quit) link, and the
+  Esc key collapses it.
 
-## Configuração
+## Configuration
 
-Tudo em `config.js`: modo de conversão, largura máxima, tamanho do hash, apagar ou manter o
-original (`deleteOriginal`), pastas observadas, extensões aceitas e tamanho do histórico.
+Everything lives in `config.js`: conversion mode, maximum width, hash length, keeping or deleting
+the original (`deleteOriginal`), watched folders, accepted extensions and history size.
 
-Para otimizar também os prints do Windows (Win + PrintScreen), adicione a pasta
-`Imagens\Screenshots` em `watchDirs`.
+To also optimize Windows screenshots (Win + PrintScreen), add the `Pictures\Screenshots` folder
+to `watchDirs`.
 
-## Observações
+## Notes
 
-- Só imagens **novas** são processadas; o que já estava na pasta é ignorado. Arquivos que
-  chegarem com o app desativado também não são processados depois.
-- Arquivos temporários de download (`.crdownload`, `.part`, `.tmp`) são ignorados, e o app
-  espera o arquivo terminar de ser escrito antes de converter.
-- O atalho Alt + X é global: se outro programa já o usa, o app avisa pela bandeja e continua
-  acessível pelo ícone. Dá para trocar em `config.js` (`hotkey`).
-- Só uma instância roda por vez.
+- Only **new** images are processed; whatever was already in the folder is ignored. Files that
+  arrive while the app is disabled are not processed later either.
+- Temporary browser download files (`.crdownload`, `.part`, `.tmp`) are ignored, and the app
+  waits for the file to finish being written before converting it.
+- Alt + X is a global shortcut: if another program already uses it, the app warns you through the
+  tray and stays reachable via its icon. You can change it in `config.js` (`hotkey`).
+- Only one instance runs at a time.

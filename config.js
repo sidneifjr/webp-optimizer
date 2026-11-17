@@ -44,7 +44,7 @@ module.exports = {
   // Atenção: redimensionar deixa a conversão de ser lossless em relação ao original.
   maxWidth: null,
 
-  // Quantidade de caracteres do hash no início do nome do arquivo.
+  // Quantidade de caracteres do hash no final do nome do arquivo (antes da extensão).
   hashLength: 10,
 
   // Quantidade máxima de itens guardados no histórico do painel.

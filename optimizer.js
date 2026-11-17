@@ -89,7 +89,7 @@ function createOptimizer(config, { onResult = () => {}, log = console.log } = {}
         .digest('hex')
         .slice(0, config.hashLength);
 
-      const outName = `${hash}_${baseName}.webp`;
+      const outName = `${baseName}_${hash}.webp`;
       const outPath = path.join(config.outputDir, outName);
 
       await fsp.mkdir(config.outputDir, { recursive: true });
