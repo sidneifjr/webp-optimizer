@@ -11,9 +11,9 @@ const {
 } = require('electron');
 const path = require('path');
 const sharp = require('sharp');
-const config = require('./config');
-const { createOptimizer } = require('./optimizer');
-const { createHistory } = require('./history');
+const config = require('./config/main');
+const { createOptimizer } = require('./optimizer/main');
+const { createHistory } = require('./history/main');
 
 const PANEL_SIZE = { width: 580, height: 440 };
 const ARROW_SIZE = { width: 30, height: 64 };
@@ -88,7 +88,7 @@ function baseWindowOptions(size) {
     hasShadow: false,
     show: false,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, './ui/preload/main.js'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
@@ -119,11 +119,11 @@ function placeArrow() {
 function createWindows() {
   panelWin = new BrowserWindow(baseWindowOptions(PANEL_SIZE));
   panelWin.setAlwaysOnTop(true, 'screen-saver');
-  panelWin.loadFile('panel.html');
+  panelWin.loadFile('./ui/panel/index.html');
 
   arrowWin = new BrowserWindow(baseWindowOptions(ARROW_SIZE));
   arrowWin.setAlwaysOnTop(true, 'screen-saver');
-  arrowWin.loadFile('arrow.html');
+  arrowWin.loadFile('./ui/arrow/index.html');
 }
 
 function showPanel() {
