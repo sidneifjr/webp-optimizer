@@ -1,4 +1,4 @@
-# Otimizador WebP
+# Webp Image Optimizer
 
 An Electron (Node.js) app that runs in the background, watches your **Downloads** folder and
 converts every new image to **WebP**, saving it to `Downloads\Otimizadas` with a **hash appended
